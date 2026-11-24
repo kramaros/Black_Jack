@@ -1,4 +1,7 @@
 import random
+import sys
+
+#sys.tracebacklimit = 0
 
 class carte:
     # valeur prend la valeur de la carte (as à Roi)
@@ -8,6 +11,7 @@ class carte:
         self.valeur=valeur
         self.figure=figure
         self.symbole=symbole
+        self.ID=f"{self.valeur}{self.symbole}"
         self.etat="affiché"
         self.affichage=f"""
   ____      
@@ -62,7 +66,7 @@ class deck:
     def create(self):
         # test de possibilité de création du jeux:
         if not self.nb_cartejeux%4==0:
-            raise "Nombre de carte par jeux inexacte"
+            raise ValueError("Nombre de carte par jeux inexacte")
         else:
             for i in range(self.nb_jeux):
                 for fig,symb in zip(self.figures,self.symboles): #zip rend un tuple des valeurs associé 
@@ -79,7 +83,11 @@ class deck:
     def shuffle(self):
         random.shuffle(self.deck)
 
-test=carte("10","@","@")
-print(test)
-test.retourner()
-print(test)
+    # permet de donner ou poser une carte sur un deck vide ou deja remplie 
+    def donner(self,carte:carte,other:deck):
+        if carte in self.deck:
+            other.deck.append(carte)
+            self.deck.remove(carte)
+        else:
+            raise ValueError(f"carte abscente du deck {self}") 
+
