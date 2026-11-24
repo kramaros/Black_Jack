@@ -1,3 +1,5 @@
+import random
+
 class carte:
     # valeur prend la valeur de la carte (as à Roi)
     # figure prend le nom de la figure en str
@@ -47,5 +49,9 @@ class deck:
     # à redefinir en fonction du jeux souhaité dans l'héritage de la class
     def __str__(self): 
         return str(self.deck)
+
+    # pour mélanger le deck 
+    def shuffle(self):
+        random.shuffle(self.deck)
 
 
