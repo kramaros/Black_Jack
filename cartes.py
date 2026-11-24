@@ -8,17 +8,42 @@ class carte:
         self.valeur=valeur
         self.figure=figure
         self.symbole=symbole
+        self.etat="affiché"
         self.affichage=f"""
   ____      
  |{self.valeur}   |
  | {self.symbole}  |
- |___{self.valeur}|
+ |   {self.valeur}|
+  ‾‾‾‾ """ if self.valeur!="10" else f"""
+  ____      
+ |10  |
+ | {self.symbole}  |
+ |  10|
+  ‾‾‾‾
+""" 
+
+        
+        self.cachée=f"""
+  ____      
+ |####|
+ |####|
+ |####|
+  ‾‾‾‾
 """
     def __str__(self):
-        return self.affichage
+        if self.etat=="affiché":
+            return self.affichage
+        else:
+            return self.cachée
 
     def __repr__(self):
         return f"{self.valeur} de {self.figure}"
+
+    def retourner(self):
+        if self.etat=="affiché":
+            self.etat="caché"
+        else:
+            self.etat="affiché"
 
 class deck:
     
@@ -54,4 +79,7 @@ class deck:
     def shuffle(self):
         random.shuffle(self.deck)
 
-
+test=carte("10","@","@")
+print(test)
+test.retourner()
+print(test)
