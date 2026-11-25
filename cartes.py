@@ -1,7 +1,7 @@
 import random
 import sys
 
-#sys.tracebacklimit = 0
+sys.tracebacklimit = 0
 
 class carte:
     # valeur prend la valeur de la carte (as à Roi)
@@ -90,4 +90,3 @@ class deck:
             self.deck.remove(carte)
         else:
             raise ValueError(f"carte abscente du deck {self}") 
-
