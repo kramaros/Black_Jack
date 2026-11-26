@@ -1,7 +1,7 @@
 import random
 import sys
 
-sys.tracebacklimit = 0
+#sys.tracebacklimit = 0
 
 class carte:
     # valeur prend la valeur de la carte (as à Roi)
@@ -14,7 +14,7 @@ class carte:
         self.ID=f"{self.valeur}{self.symbole}"
         self.etat="affiché"
         self.affichage=f"""
-  ____      
+  ____ 
  |{self.valeur}   |
  | {self.symbole}  |
  |   {self.valeur}|
@@ -65,7 +65,7 @@ class deck:
     # création du deck de base du jeux souhaité
     def create(self):
         # test de possibilité de création du jeux:
-        if not self.nb_cartejeux%4==0:
+        if self.nb_cartejeux%4!=0 or not (0 <= self.nb_cartejeux <= 52):
             raise ValueError("Nombre de carte par jeux inexacte")
         else:
             for i in range(self.nb_jeux):
@@ -84,7 +84,7 @@ class deck:
         random.shuffle(self.deck)
 
     # permet de donner ou poser une carte sur un deck vide ou deja remplie 
-    def donner(self,carte:carte,other:deck):
+    def donner(self,carte:carte,other:"deck"):
         if carte in self.deck:
             other.deck.append(carte)
             self.deck.remove(carte)
