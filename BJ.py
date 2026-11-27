@@ -1,9 +1,6 @@
 import cartes
 from joueur import joueur
 
-#fonction de l'assurance si le croupier commence avec un As
-# donner en argument le deck de la table et le tuple duimport cartes
-
 # dictionnaire ordonant la valeur des cartes
 Valeur_cartes={
     "A":(1,11),
@@ -35,8 +32,7 @@ def initialisation():
 
     #création du deck de la table
     table=cartes.deck(0,0)
-
-    nb_joueur=int(input("""
+    reponse=input("""
                                 88                          
                                 ""                          
                                                             
@@ -51,7 +47,18 @@ a8"     "" ""     `Y8 I8[    "" 88 88P'   `"8a a8"     "8a
 
     Bienvenue au Black Jack
 
-    Combien de joueur ? """))
+    Combien de joueur ? """)
+
+    while True:
+        try:
+            nb_joueur = int(reponse)
+
+            if nb_joueur > 0:
+                break
+
+        except ValueError:
+            pass
+        reponse = input("Donnez un nombre valable : ")
 
     for i in range(nb_joueur):
         name:str=input(f"\nnom du joueur {i+1} ?")
@@ -96,8 +103,11 @@ def valeur_deck(deck:cartes.deck):
 def afficher_deck(deck):
     if type(deck)==joueur:
         print(f"\n Deck de {deck.nom} :\n")
+        if len(deck.poche)>1:
+            print(f"\nDeck n° {deck.poche.index(deck.deck)+1}\n")
+            print(f"\nMise du deck: {deck.mise}\n")
         print(f"\nBankroll: {deck.bankroll}")
-        print(f"\nMise: {deck.mise}")
+        print(f"\nMise totale: {sum(deck.liste_mises)}")
 
     cartes_affichees = [
         str(carte).strip("\n").splitlines()
@@ -160,71 +170,173 @@ def assurance(table,ordre):
 
 
     if Black_Jack(table):
-        print("\nBLACK JACK !!!\n")
-        print("* retournement de la carte face visible")
+
+        print("\nBLACK JACK DU CROUPIER !!!\n")
+
         table.deck[1].retourner()
         afficher_deck(table)
-        print("\n Le croupier fait Black Jack, remboursement des assurances et perte des autres")
 
-        #rendre mise et assurance 
         for i in ordre:
-            if type(i)==joueur:
-                # gain BL + assurance
-                if i.assurance>0 and Black_Jack(i):
-                    print(f"\nBlack Jack de {i.nom}")
-                    i.gain()
 
-                elif i.assurance>0 or Black_Jack(i):
-                    i.bankroll+=i.assurance+i.mise
-                    i.assurance=0
-                    i.mise=0
-                    print(f"\nassurance rendu à {i.nom}")
-                
-                elif i.assurance==0:
-                    i.perte() # perte de la mise
+            if type(i) == joueur:
+
+                # Gestion de l'assurance
+                if i.assurance > 0:
+                    i.bankroll += i.assurance * 3
+                    print(f"\nAssurance gagnée par {i.nom}")
+
+                i.assurance = 0
+
+                # Gestion de la mise principale
+                if Black_Jack(i):
+                    i.gain(0, 1)
+
+                else:
+                    i.perte(0)
+
         return True
-    
-    else:
-        #prendre assurance
-        for i in ordre:
-            if type(i)==joueur:
-                i.assurance=0
 
+    else:
+
+        for i in ordre:
+
+            if type(i) == joueur:
+
+                if i.assurance > 0:
+                    print(f"\nAssurance perdue par {i.nom}")
+
+                i.assurance = 0
+
+        return False
+
+# possibiliter de doubler la mise et seulement tirer une carte    
+# donner en argument le deck croupier et le joueur 
+# en sortie False si double mise impossible
+# True si elle est possible            
+def double_mise(croupier:cartes.deck,joueur:joueur,p): # modifier pour doubler unquement la mise de la main 
+    if joueur.bankroll<joueur.mise:
+        print("bankroll insuffisant pour doubler")
+        return False
+    
+    print(f"\n{joueur.nom} fait une double mise !")
+    joueur.bankroll-=joueur.mise
+    joueur.mise+=joueur.mise
+    joueur.liste_mises[p]=joueur.mise
+
+    croupier.donner(croupier.deck[0],joueur)
+    afficher_deck(joueur)
+    return True
+
+# retourne True si possibilité de split sinon False
+# fonction non implémenté dans la classe car valeurs des cartes défini dans dictionnaire externe 
+def possibiliter_split(joueur:joueur):
+    return (
+    len(joueur.deck)==2 
+    and 
+    Valeur_cartes[joueur.deck[0].valeur]==Valeur_cartes[joueur.deck[1].valeur]
+    )
+            
+
+# action du joueur: tirer rester doubler split
+# attention !! double apres split possible 
+# split un as permet uniquement de prendre une carte par as
+# pas de black jack apres un split
+# apres un split d'as impossible de doubler la mise
+def action(croupier:cartes.deck,joueur:joueur):
+
+    p=0
+    while p < len(joueur.poche): # boucle pour chaque main d'un joueur
+        
+        joueur.changer_deck(p)
+
+        while valeur_deck(joueur) < 21:
+
+
+            if len(joueur.deck) == 1:
+
+                as_split = joueur.deck[0].valeur == "A"
+
+                croupier.donner(croupier.deck[0], joueur)
+                afficher_deck(joueur)
+
+                if as_split:
+                    break
+
+                if valeur_deck(joueur) >= 21:
+                    break
+
+            choix=["[1] Tirer","[2] Rester"]
+            choix_valides=["1", "2"]
+
+            if len(joueur.deck)==2:
+                choix.append("[3] Doubler Mise")
+                choix_valides.append("3")
+
+                if possibiliter_split(joueur):
+                    choix.append("[4] Split")
+                    choix_valides.append("4")
+
+            réponse=input("\n"+" ".join(choix)+"\n")
+            while réponse not in (choix_valides):
+                print("\nChoix invalide, recommencez\n")
+                réponse=input("\n"+" ".join(choix)+"\n")
+            
+            if réponse == "1":
+                croupier.donner(croupier.deck[0], joueur)
+                afficher_deck(joueur)
+
+            if réponse=="2":
+                print(f"\n {joueur.nom} reste")
+                break
+
+            if réponse=="3":
+                if not double_mise(croupier,joueur,p):
+                    continue
+                break
+            
+            if réponse=="4": # faire en sorte de pouvoir tourner de main sr un tour / limiter a 4 mains X / rajouter une mise similaire sur mise total et a chaque élimination de main supprimer la partie de la mise
+
+
+                if len(joueur.poche)>=4:
+                    print("nombre de jeux maximal à 4 déja atteint")
+                    continue
+                
+                if joueur.bankroll<joueur.mise: # bloquer si pas assez d'argent pour split
+                    print("pas assez d'argent dans la Bankroll pour split")
+                    continue
+
+                joueur.split()
+
+                for i in range(len(joueur.poche)):
+                    joueur.changer_deck(i)
+                    print(f"{joueur.nom} : deck n° {i+1}")
+                    afficher_deck(joueur)
+
+                joueur.changer_deck(p)
+    
+
+        if valeur_deck(joueur)>21:
+            print(f"dépassement de 21 pour cette main")
+            joueur.perte(p)
+        p+=1
+        
+
+    return
+    
 # tours des joueurs avant le croupier 
 # mettre en argument le deck de la banque et celui des joueurs
-def tour_joueur(croupier,joueur):
+def tour_joueur(croupier,joueur:joueur):
     print(f"\ntour de {joueur.nom}")
     # vérifier black jack
     if Black_Jack(joueur):
         print("\nBLACK JACK !!!\n\n")
-        joueur.bankroll+=0.5*joueur.mise
-        joueur.gain()
+        joueur.gain(0,2.5)
         
         return
 
     afficher_deck(joueur)
 
-    #tirer
-    while valeur_deck(joueur) < 21:
-
-        réponse = input("\n[1] Tirer [2] Rester\n")
-
-        while réponse not in ("1", "2"):
-            réponse = input("\nChoix invalide, recommencez\n")
-
-        if réponse == "1":
-            croupier.donner(croupier.deck[0], joueur)
-            afficher_deck(joueur)
-
-        if réponse=="2":
-            print(f"\n {joueur.nom} reste")
-            return
-
-    if valeur_deck(joueur)>21:
-        print(f"{joueur.nom} a un total supérieur à 21")
-        joueur.perte()
-        return 
-
+    action(croupier,joueur)
 
 # la banque tire à 16, reste à 17
 # donner en argument le deck du crouîer ainsi que celui de la table
@@ -246,20 +358,33 @@ def tour_croupier(croupier,table):
 
 # fonction permettant de donner les gains ou les pertes
 # donner en entré le deck des joueurs et de la table
-def vérification(joueur,table):
-    # selection de joueur encore en jeux
-    if joueur.mise==0:
-        return 
+def vérification(joueur:joueur,table):
+    # selection de joueur encore en jeux !!! ainsi que de leurs différentes mains 
 
-    if valeur_deck(joueur)<valeur_deck(table):
-        joueur.perte()
 
-    if valeur_deck(joueur)>valeur_deck(table):
-        joueur.gain()
+    for p in range(len(joueur.poche)):
+        if joueur.liste_mises[p]==0:
+            continue
 
-    if valeur_deck(joueur)==valeur_deck(table):
-        joueur.bankroll+=joueur.mise
-        joueur.mise=0
+        joueur.changer_deck(p)
+
+
+        if valeur_deck(joueur) > 21:
+            joueur.perte(p)
+
+        elif valeur_deck(table) > 21:
+            joueur.gain(p)
+
+        elif valeur_deck(joueur) < valeur_deck(table):
+            joueur.perte(p)
+
+        elif valeur_deck(joueur) > valeur_deck(table):
+            joueur.gain(p)
+
+        else:
+            joueur.gain(p, 1)
+
+        
 
 # fonction qui supprime les joueurs avec un solde nul
 # rend le joueur pour le mettre dans une liste poubelle
@@ -300,18 +425,11 @@ def tour(croupier, table, ordre):
     afficher_deck(table)
 
 
-    # tour du croupier et vérification des cartes
-    if tour_croupier(croupier,table):
-        # vérification des points
-        for i in ordre:
-            if type(i)==joueur:
-                vérification(i,table)
-    # si croupier dépasse            
-    else:
-        for i in ordre:
-            if type(i)==joueur and i.mise>0:
-                i.gain()
-    
+    tour_croupier(croupier, table)
+
+    for i in ordre:
+        if type(i) == joueur:
+            vérification(i, table)
 
 
 # choix de continuer de jouer ou non
@@ -342,11 +460,16 @@ def affichage_score(score:list[joueur]):
 # fonction pour vider les decks a la fin d'un tour     
 # probleme pouvant être rencontré : si jamais le croupier n'a plus de carte ?
 # si deck vide du croupier, rajouter la defausse mélangé dans son deck a nouveau
-def vider_deck(ordre,défausse,table):
+def vider_deck(ordre,défausse,table): # rajouter aussi les autres mains !!
     for i in ordre:
         if type(i) == joueur:
-            défausse.deck.extend(i.deck)
+            for p in i.poche:
+                défausse.deck.extend(p)
+            i.poche.clear()
             i.deck.clear()
+            i.liste_mises.clear()
+            i.mise=0
+            i.assurance=0
 
     défausse.deck.extend(table.deck)
     table.deck.clear()

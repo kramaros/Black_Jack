@@ -19,7 +19,7 @@ class carte:
  | {self.symbole}  |
  |   {self.valeur}|
   ‾‾‾‾ """ if self.valeur!="10" else f"""
-  ____      
+  ____ 
  |10  |
  | {self.symbole}  |
  |  10|
@@ -28,7 +28,7 @@ class carte:
 
         
         self.cachée=f"""
-  ____      
+  ____ 
  |####|
  |####|
  |####|
